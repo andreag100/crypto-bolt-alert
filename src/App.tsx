@@ -5,29 +5,31 @@ import { AlertList } from './components/AlertList';
 import { PriceDisplay } from './components/PriceDisplay';
 import { CryptoAlert, CryptoPrice } from './types';
 import { Coins } from 'lucide-react';
+import { fetchCryptoPrices } from './services/api';
 
-// Simulated initial price data
-const initialPrices: CryptoPrice[] = [
-  { symbol: 'BTC', price: 42000, change24h: 2.5 },
-  { symbol: 'ETH', price: 2800, change24h: -1.2 },
-  { symbol: 'BNB', price: 380, change24h: 0.8 },
-];
+const SUPPORTED_CRYPTOS = ['BTC', 'ETH', 'BNB', 'SOL', 'ADA'];
+const UPDATE_INTERVAL = 30000; // 30 seconds
 
 function App() {
   const [alerts, setAlerts] = useState<CryptoAlert[]>([]);
-  const [prices, setPrices] = useState<CryptoPrice[]>(initialPrices);
+  const [prices, setPrices] = useState<CryptoPrice[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Simulate price updates
+  // Fetch initial prices and set up polling
   useEffect(() => {
-    const interval = setInterval(() => {
-      setPrices((currentPrices) =>
-        currentPrices.map((crypto) => ({
-          ...crypto,
-          price: crypto.price * (1 + (Math.random() - 0.5) * 0.002),
-          change24h: crypto.change24h + (Math.random() - 0.5),
-        }))
-      );
-    }, 5000);
+    const fetchPrices = async () => {
+      try {
+        const newPrices = await fetchCryptoPrices(SUPPORTED_CRYPTOS);
+        setPrices(newPrices);
+      } catch (error) {
+        toast.error('Failed to fetch crypto prices');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPrices();
+    const interval = setInterval(fetchPrices, UPDATE_INTERVAL);
 
     return () => clearInterval(interval);
   }, []);
@@ -62,6 +64,11 @@ function App() {
     targetPrice: number,
     condition: 'above' | 'below'
   ) => {
+    if (!SUPPORTED_CRYPTOS.includes(symbol)) {
+      toast.error(`${symbol} is not supported. Please choose from: ${SUPPORTED_CRYPTOS.join(', ')}`);
+      return;
+    }
+
     const newAlert: CryptoAlert = {
       id: Math.random().toString(36).substr(2, 9),
       symbol,
@@ -94,13 +101,13 @@ function App() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
-            <PriceDisplay prices={prices} />
+            <PriceDisplay prices={prices} loading={loading} />
             <div className="mt-8">
               <AlertList alerts={alerts} onDelete={handleDeleteAlert} />
             </div>
           </div>
           <div>
-            <AlertForm onSubmit={handleCreateAlert} />
+            <AlertForm onSubmit={handleCreateAlert} supportedCryptos={SUPPORTED_CRYPTOS} />
           </div>
         </div>
       </main>

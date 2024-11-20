@@ -4,9 +4,32 @@ import { CryptoPrice } from '../types';
 
 interface PriceDisplayProps {
   prices: CryptoPrice[];
+  loading: boolean;
 }
 
-export function PriceDisplay({ prices }: PriceDisplayProps) {
+export function PriceDisplay({ prices, loading }: PriceDisplayProps) {
+  if (loading) {
+    return (
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <TrendingUp className="w-6 h-6 text-indigo-600" />
+          <h2 className="text-xl font-bold text-gray-800">Live Prices</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="p-4 rounded-lg border border-gray-200 animate-pulse"
+            >
+              <div className="h-6 bg-gray-200 rounded w-20 mb-2"></div>
+              <div className="h-8 bg-gray-200 rounded w-32"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-xl shadow-lg p-6">
       <div className="flex items-center gap-2 mb-4">
@@ -34,7 +57,10 @@ export function PriceDisplay({ prices }: PriceDisplayProps) {
               </span>
             </div>
             <p className="text-2xl font-bold text-gray-900 mt-2">
-              ${crypto.price.toLocaleString()}
+              ${crypto.price.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
             </p>
           </div>
         ))}

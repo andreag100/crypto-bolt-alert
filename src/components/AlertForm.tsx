@@ -3,9 +3,10 @@ import { Bell } from 'lucide-react';
 
 interface AlertFormProps {
   onSubmit: (symbol: string, targetPrice: number, condition: 'above' | 'below') => void;
+  supportedCryptos: string[];
 }
 
-export function AlertForm({ onSubmit }: AlertFormProps) {
+export function AlertForm({ onSubmit, supportedCryptos }: AlertFormProps) {
   const [symbol, setSymbol] = useState('');
   const [targetPrice, setTargetPrice] = useState('');
   const [condition, setCondition] = useState<'above' | 'below'>('above');
@@ -31,14 +32,19 @@ export function AlertForm({ onSubmit }: AlertFormProps) {
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Cryptocurrency Symbol
           </label>
-          <input
-            type="text"
+          <select
             value={symbol}
             onChange={(e) => setSymbol(e.target.value)}
-            placeholder="BTC"
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             required
-          />
+          >
+            <option value="">Select a cryptocurrency</option>
+            {supportedCryptos.map((crypto) => (
+              <option key={crypto} value={crypto}>
+                {crypto}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div>
