@@ -13,7 +13,7 @@ export function PriceDisplay({ prices, loading }: PriceDisplayProps) {
       <div className="bg-white rounded-xl shadow-lg p-6">
         <div className="flex items-center gap-2 mb-4">
           <TrendingUp className="w-6 h-6 text-indigo-600" />
-          <h2 className="text-xl font-bold text-gray-800">Live Prices:</h2>
+          <h2 className="text-xl font-bold text-gray-800">Live Prices</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
@@ -36,7 +36,7 @@ export function PriceDisplay({ prices, loading }: PriceDisplayProps) {
         <TrendingUp className="w-6 h-6 text-indigo-600" />
         <h2 className="text-xl font-bold text-gray-800">Live Prices</h2>
       </div>
-
+      
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {prices.map((crypto) => (
           <div
