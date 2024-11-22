@@ -4,7 +4,7 @@ import { Toaster } from 'sonner';
 import { Layout } from './components/Layout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { HomePage } from './pages/HomePage';
-//import { DashboardPage } from './pages/DashboardPage';
+import { DashboardPage } from './pages/DashboardPage';
 import { LoginPage } from './pages/LoginPage';
 
 function App() {

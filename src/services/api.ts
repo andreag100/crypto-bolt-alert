@@ -10,15 +10,14 @@ export async function fetchCryptoPrices(symbols: string[]): Promise<CryptoPrice[
       `${COINGECKO_API}/simple/price?ids=${ids.join(',')}&vs_currencies=usd&include_24hr_change=true`,
       {
         headers: {
-          'Accept': 'application/json',
-          'X-CG-API-Key': API_KEY,
-          'Cache-Control': 'no-cache',
+          'Authorization': `Bearer ${API_KEY}`,
+          'Content-Type': 'application/json',
         },
       }
     );
     
     if (!response.ok) {
-      throw new Error(`Failed to fetch prices: ${response.status}`);
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
@@ -27,14 +26,10 @@ export async function fetchCryptoPrices(symbols: string[]): Promise<CryptoPrice[
       const id = getCoinGeckoId(symbol.toLowerCase());
       const priceData = data[id];
       
-      if (!priceData) {
-        throw new Error(`No price data available for ${symbol}`);
-      }
-
       return {
         symbol,
-        price: priceData.usd,
-        change24h: priceData.usd_24h_change,
+        price: priceData?.usd || 0,
+        change24h: priceData?.usd_24h_change || 0,
       };
     });
   } catch (error) {
@@ -56,6 +51,16 @@ function getCoinGeckoId(symbol: string): string {
     doge: 'dogecoin',
     avax: 'avalanche-2',
     matic: 'matic-network',
+    link: 'chainlink',
+    uni: 'uniswap',
+    atom: 'cosmos',
+    algo: 'algorand',
+    near: 'near',
+    ftm: 'fantom',
+    vet: 'vechain',
+    one: 'harmony',
+    egld: 'elrond-erd-2',
+    theta: 'theta-token'
   };
   return mapping[symbol] || symbol;
 }
