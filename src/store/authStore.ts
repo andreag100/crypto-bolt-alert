@@ -10,8 +10,8 @@ interface AuthState {
   checkSession: () => Promise<void>;
 }
 
-// Force production URL for auth redirects
-const siteUrl = 'https://cryptoalerts.cloud';
+// Get the site URL from environment or default to the current origin
+const siteUrl = import.meta.env.VITE_APP_URL || window.location.origin;
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
