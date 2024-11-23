@@ -10,8 +10,8 @@ interface AuthState {
   checkSession: () => Promise<void>;
 }
 
-// Get the site URL from environment or default to the current origin
-const siteUrl = import.meta.env.VITE_APP_URL || window.location.origin;
+// Get the site URL from environment variables
+const siteUrl = import.meta.env.VITE_APP_URL;
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
@@ -25,9 +25,6 @@ export const useAuthStore = create<AuthState>((set) => ({
         options: {
           emailRedirectTo: `${siteUrl}/dashboard`,
           shouldCreateUser: true,
-          data: {
-            redirect_url: `${siteUrl}/dashboard`
-          }
         },
       });
       if (error) throw error;
