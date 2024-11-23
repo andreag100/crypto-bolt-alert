@@ -10,6 +10,10 @@ interface AuthState {
   checkSession: () => Promise<void>;
 }
 
+const baseUrl = import.meta.env.PROD
+  ? 'https://cryptoalerts.cloud'
+  : window.location.origin;
+
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   session: null,
@@ -20,7 +24,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`,
+          emailRedirectTo: `${baseUrl}/dashboard`,
           shouldCreateUser: true,
         },
       });
