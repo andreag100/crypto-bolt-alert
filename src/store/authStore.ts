@@ -10,9 +10,8 @@ interface AuthState {
   checkSession: () => Promise<void>;
 }
 
-const baseUrl = import.meta.env.PROD
-  ? 'https://cryptoalerts.cloud'
-  : window.location.origin;
+// Force production URL for auth redirects
+const siteUrl = 'https://cryptoalerts.cloud';
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
@@ -24,8 +23,11 @@ export const useAuthStore = create<AuthState>((set) => ({
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${baseUrl}/dashboard`,
+          emailRedirectTo: `${siteUrl}/dashboard`,
           shouldCreateUser: true,
+          data: {
+            redirect_url: `${siteUrl}/dashboard`
+          }
         },
       });
       if (error) throw error;
@@ -39,6 +41,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       await supabase.auth.signOut();
       set({ user: null, session: null });
+      window.location.href = siteUrl;
     } catch (error) {
       console.error('Error signing out:', error);
       throw error;
