@@ -14,13 +14,14 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   session: null,
   loading: true,
-  
+
   signIn: async (email: string) => {
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
           emailRedirectTo: `${window.location.origin}/dashboard`,
+          shouldCreateUser: true,
         },
       });
       if (error) throw error;
@@ -43,10 +44,19 @@ export const useAuthStore = create<AuthState>((set) => ({
   checkSession: async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      set({ 
+      set({
         session,
         user: session?.user ?? null,
         loading: false
+      });
+
+      // Set up auth state change listener
+      supabase.auth.onAuthStateChange((_event, session) => {
+        set({
+          session,
+          user: session?.user ?? null,
+          loading: false
+        });
       });
     } catch (error) {
       console.error('Error checking session:', error);
