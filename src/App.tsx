@@ -13,20 +13,18 @@ function App() {
   const checkSession = useAuthStore((state) => state.checkSession);
 
   useEffect(() => {
-    const hash = window.location.hash;
-    if (hash && hash.includes('access_token')) {
-      checkSession();
-    }
+    // Check session on app load
+    checkSession();
   }, [checkSession]);
 
   return (
     <Router>
       <Toaster position="top-right" />
       <Routes>
-        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />
           <Route path="login" element={<LoginPage />} />
+          <Route path="auth/callback" element={<AuthCallback />} />
           <Route
             path="dashboard"
             element={
