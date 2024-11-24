@@ -1,9 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://qunoxnceswfilpbdmaxp.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1bm94bmNlc3dmaWxwYmRtYXhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzIyNTY3NzIsImV4cCI6MjA0NzgzMjc3Mn0.SeARfPyczhfd69TtHOVBsG_H2C3Dh2QybAPLbPrRHTU';
-
-// Get the site URL from environment variables
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const siteUrl = import.meta.env.VITE_APP_URL;
 
 export const supabase = createClient(supabaseUrl, supabaseKey, {
@@ -14,6 +12,6 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
     flowType: 'pkce',
     storage: window.localStorage,
     storageKey: 'crypto-alerts-auth',
-    redirectTo: `${siteUrl}/dashboard`
+    redirectTo: `${siteUrl}/auth/callback`
   }
 });

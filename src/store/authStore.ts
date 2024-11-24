@@ -10,7 +10,6 @@ interface AuthState {
   checkSession: () => Promise<void>;
 }
 
-// Get the site URL from environment variables
 const siteUrl = import.meta.env.VITE_APP_URL;
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -23,7 +22,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${siteUrl}/dashboard`,
+          emailRedirectTo: `${siteUrl}/auth/callback`,
           shouldCreateUser: true,
         },
       });
