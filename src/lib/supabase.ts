@@ -12,6 +12,6 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
     flowType: 'pkce',
     storage: window.localStorage,
     storageKey: 'crypto-alerts-auth',
-    redirectTo: siteUrl
+    redirectTo: `${siteUrl}/auth/callback`
   }
 });

@@ -6,6 +6,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { HomePage } from './pages/HomePage';
 import { DashboardPage } from './pages/DashboardPage';
 import { LoginPage } from './pages/LoginPage';
+import { AuthCallback } from './components/AuthCallback';
 import { useAuthStore } from './store/authStore';
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
     <Router>
       <Toaster position="top-right" />
       <Routes>
+        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />
           <Route path="login" element={<LoginPage />} />
