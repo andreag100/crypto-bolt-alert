@@ -22,7 +22,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${siteUrl}/auth/callback`,
+          emailRedirectTo: siteUrl,
           shouldCreateUser: true,
         },
       });
@@ -53,13 +53,16 @@ export const useAuthStore = create<AuthState>((set) => ({
         loading: false
       });
 
-      // Set up auth state change listener
       supabase.auth.onAuthStateChange((_event, session) => {
         set({
           session,
           user: session?.user ?? null,
           loading: false
         });
+
+        if (session) {
+          window.location.href = `${siteUrl}/dashboard`;
+        }
       });
     } catch (error) {
       console.error('Error checking session:', error);
