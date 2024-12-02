@@ -8,10 +8,10 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true,
-    flowType: 'pkce',
+    detectSessionInUrl: false, // Important: set this to false since we're handling it manually
     storage: window.localStorage,
     storageKey: 'crypto-alerts-auth',
+    flowType: 'pkce',
     redirectTo: `${siteUrl}/auth/callback`
   }
 });

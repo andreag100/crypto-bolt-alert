@@ -1,40 +1,47 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'sonner';
 
 export function AuthCallback() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const checkSession = useAuthStore((state) => state.checkSession);
 
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        // Get the URL hash
-        const hash = window.location.hash;
-        console.log('Auth callback URL hash:', hash);
+        const code = searchParams.get('code');
+        console.log('Auth callback code:', code);
 
-        // Get current session
-        const { data: { session }, error } = await supabase.auth.getSession();
-        console.log('Auth callback session:', session);
-        
-        if (error) {
-          console.error('Session error:', error);
-          toast.error('Authentication failed');
-          throw error;
-        }
-        
-        if (session) {
-          console.log('Valid session found, checking session...');
-          await checkSession();
-          console.log('Session checked, navigating to dashboard...');
-          navigate('/dashboard', { replace: true });
-          toast.success('Successfully signed in!');
-        } else {
-          console.log('No session found, redirecting to login...');
+        if (!code) {
+          console.error('No code found in URL');
+          toast.error('Authentication failed: No code found');
           navigate('/login', { replace: true });
+          return;
+        }
+
+        // Exchange code for session
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+        console.log('Exchange response:', data, error);
+
+        if (error) {
+          console.error('Exchange error:', error);
           toast.error('Authentication failed');
+          navigate('/login', { replace: true });
+          return;
+        }
+
+        if (data.session) {
+          console.log('Session obtained:', data.session);
+          await checkSession();
+          toast.success('Successfully signed in!');
+          navigate('/dashboard', { replace: true });
+        } else {
+          console.error('No session in exchange response');
+          toast.error('Authentication failed: No session');
+          navigate('/login', { replace: true });
         }
       } catch (error) {
         console.error('Error in auth callback:', error);
@@ -44,7 +51,7 @@ export function AuthCallback() {
     };
 
     handleAuthCallback();
-  }, [navigate, checkSession]);
+  }, [navigate, searchParams, checkSession]);
 
   return (
     <div className="flex items-center justify-center min-h-screen">
