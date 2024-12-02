@@ -24,6 +24,7 @@ export function useCryptoPrices(coins: string[] = SUPPORTED_CRYPTOS) {
     let retryCount = 0;
     const maxRetries = 3;
     const retryDelay = 5000; // 5 seconds
+    const pollInterval = 30000; // 30 seconds
 
     const fetchPrices = async () => {
       if (!coins.length) {
@@ -32,18 +33,19 @@ export function useCryptoPrices(coins: string[] = SUPPORTED_CRYPTOS) {
       }
 
       try {
+        // Use Netlify Function endpoint
         const response = await fetch(
-          `https://api.coingecko.com/api/v3/simple/price?ids=${coins.join(',')}&vs_currencies=usd&include_24hr_change=true`,
+          `/.netlify/functions/crypto-prices?coins=${coins.join(',')}`,
           {
             headers: {
-              'Accept': 'application/json',
-              'Cache-Control': 'no-cache'
+              'Accept': 'application/json'
             }
           }
         );
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
@@ -67,8 +69,11 @@ export function useCryptoPrices(coins: string[] = SUPPORTED_CRYPTOS) {
             retryCount++;
             setTimeout(fetchPrices, retryDelay);
           } else {
-            toast.error('Failed to fetch prices after multiple attempts. Please refresh the page.');
             console.log('Max retries reached');
+            // Only show error toast once
+            if (retryCount === maxRetries) {
+              toast.error('Failed to fetch prices. Will try again in 30 seconds.');
+            }
           }
         }
       } finally {
@@ -81,8 +86,8 @@ export function useCryptoPrices(coins: string[] = SUPPORTED_CRYPTOS) {
     setLoading(true);
     fetchPrices();
     
-    // Set up polling interval (30 seconds)
-    const intervalId = setInterval(fetchPrices, 30000);
+    // Set up polling interval
+    const intervalId = setInterval(fetchPrices, pollInterval);
 
     return () => {
       mounted = false;
