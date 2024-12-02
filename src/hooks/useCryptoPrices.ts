@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 
 interface CryptoPrice {
@@ -19,38 +19,51 @@ export function useCryptoPrices(coins: string[] = SUPPORTED_CRYPTOS) {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
+  const fetchPrices = useCallback(async () => {
+    if (!coins.length) return null;
+
+    try {
+      const response = await fetch(
+        `/.netlify/functions/crypto-prices?coins=${coins.join(',')}`,
+        {
+          headers: {
+            'Accept': 'application/json'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        if (response.status === 429) {
+          // Rate limit hit, return the retry delay
+          const retryAfter = parseInt(errorData.retryAfter || '30', 10);
+          throw new Error('rate_limit:' + retryAfter);
+        }
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      throw error;
+    }
+  }, [coins]);
+
   useEffect(() => {
     let mounted = true;
     let retryCount = 0;
+    let timeoutId: NodeJS.Timeout | null = null;
     const maxRetries = 3;
-    const retryDelay = 5000; // 5 seconds
+    const baseRetryDelay = 5000; // 5 seconds
     const pollInterval = 30000; // 30 seconds
 
-    const fetchPrices = async () => {
-      if (!coins.length) {
-        setLoading(false);
-        return;
-      }
-
+    const attemptFetch = async () => {
+      if (!mounted) return;
+      
       try {
-        // Use Netlify Function endpoint
-        const response = await fetch(
-          `/.netlify/functions/crypto-prices?coins=${coins.join(',')}`,
-          {
-            headers: {
-              'Accept': 'application/json'
-            }
-          }
-        );
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
+        const data = await fetchPrices();
+        if (!mounted) return;
         
-        if (mounted) {
+        if (data) {
           setPrices(data);
           setError(null);
           setLastUpdated(new Date());
@@ -58,23 +71,30 @@ export function useCryptoPrices(coins: string[] = SUPPORTED_CRYPTOS) {
         }
       } catch (err) {
         console.error('Error fetching prices:', err);
-        if (mounted) {
-          setError(err instanceof Error ? err.message : 'Failed to fetch prices');
-          
-          if (retryCount < maxRetries) {
-            console.log(`Retrying... Attempt ${retryCount + 1} of ${maxRetries}`);
-            if (retryCount === 0) {
-              toast.error('Failed to fetch crypto prices. Retrying...');
-            }
-            retryCount++;
-            setTimeout(fetchPrices, retryDelay);
-          } else {
-            console.log('Max retries reached');
-            // Only show error toast once
-            if (retryCount === maxRetries) {
-              toast.error('Failed to fetch prices. Will try again in 30 seconds.');
-            }
+        if (!mounted) return;
+
+        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch prices';
+        setError(errorMessage);
+
+        if (errorMessage.startsWith('rate_limit:')) {
+          const retryAfter = parseInt(errorMessage.split(':')[1], 10);
+          console.log(`Rate limited. Retrying in ${retryAfter} seconds`);
+          toast.error(`Rate limit reached. Retrying in ${retryAfter} seconds`);
+          timeoutId = setTimeout(attemptFetch, retryAfter * 1000);
+          return;
+        }
+
+        if (retryCount < maxRetries) {
+          const delay = baseRetryDelay * Math.pow(2, retryCount);
+          console.log(`Retrying... Attempt ${retryCount + 1} of ${maxRetries} in ${delay}ms`);
+          if (retryCount === 0) {
+            toast.error('Failed to fetch crypto prices. Retrying...');
           }
+          retryCount++;
+          timeoutId = setTimeout(attemptFetch, delay);
+        } else {
+          console.log('Max retries reached');
+          toast.error('Failed to fetch prices. Will try again soon.');
         }
       } finally {
         if (mounted) {
@@ -84,16 +104,17 @@ export function useCryptoPrices(coins: string[] = SUPPORTED_CRYPTOS) {
     };
 
     setLoading(true);
-    fetchPrices();
+    attemptFetch();
     
     // Set up polling interval
-    const intervalId = setInterval(fetchPrices, pollInterval);
+    const intervalId = setInterval(attemptFetch, pollInterval);
 
     return () => {
       mounted = false;
+      if (timeoutId) clearTimeout(timeoutId);
       clearInterval(intervalId);
     };
-  }, [coins]);
+  }, [fetchPrices, coins]);
 
   return { prices, loading, error, lastUpdated };
 }
