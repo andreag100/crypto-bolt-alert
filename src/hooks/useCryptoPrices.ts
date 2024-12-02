@@ -1,32 +1,67 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { CryptoPrice } from '../types';
-import { fetchCryptoPrices } from '../services/api';
 
 const SUPPORTED_CRYPTOS = [
   'BTC', 'ETH', 'BNB', 'SOL', 'ADA', 'XRP', 'DOT', 'DOGE', 'AVAX', 'MATIC',
   'LINK', 'UNI', 'ATOM', 'ALGO', 'NEAR', 'FTM', 'VET', 'ONE', 'EGLD', 'THETA'
 ];
-const UPDATE_INTERVAL = 30000; // 30 seconds
 
-export function useCryptoPrices() {
-  const [prices, setPrices] = useState<CryptoPrice[]>([]);
+export function useCryptoPrices(coins: string[] = SUPPORTED_CRYPTOS) {
+  const [prices, setPrices] = useState<CryptoPrice | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   useEffect(() => {
     let mounted = true;
+    let retryCount = 0;
+    const maxRetries = 3;
+    const retryDelay = 5000; // 5 seconds
 
     const fetchPrices = async () => {
+      if (!coins.length) {
+        setLoading(false);
+        return;
+      }
+
       try {
-        const newPrices = await fetchCryptoPrices(SUPPORTED_CRYPTOS);
-        if (mounted) {
-          setPrices(newPrices);
-          setError(null);
+        const response = await fetch(
+          `https://api.coingecko.com/api/v3/simple/price?ids=${coins.join(',')}&vs_currencies=usd`,
+          {
+            headers: {
+              'Accept': 'application/json',
+              'Cache-Control': 'no-cache'
+            }
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
-      } catch (error) {
+
+        const data = await response.json();
+        
         if (mounted) {
-          setError('Failed to fetch prices. Please try again later.');
-          console.error('Error fetching prices:', error);
+          setPrices(data);
+          setError(null);
+          setLastUpdated(new Date());
+          retryCount = 0; // Reset retry count on successful fetch
+        }
+      } catch (err) {
+        console.error('Error fetching prices:', err);
+        if (mounted) {
+          setError(err instanceof Error ? err.message : 'Failed to fetch prices');
+          if (retryCount === 0) {
+            toast.error('Failed to fetch crypto prices. Retrying...');
+          }
+          retryCount++;
+          
+          if (retryCount < maxRetries) {
+            setTimeout(fetchPrices, retryDelay);
+          } else {
+            toast.error('Failed to fetch prices after multiple attempts');
+          }
         }
       } finally {
         if (mounted) {
@@ -36,13 +71,15 @@ export function useCryptoPrices() {
     };
 
     fetchPrices();
-    const interval = setInterval(fetchPrices, UPDATE_INTERVAL);
+    
+    // Set up polling interval (30 seconds)
+    const intervalId = setInterval(fetchPrices, 30000);
 
     return () => {
       mounted = false;
-      clearInterval(interval);
+      clearInterval(intervalId);
     };
-  }, []);
+  }, [coins]);
 
-  return { prices, loading, error, supportedCryptos: SUPPORTED_CRYPTOS };
+  return { prices, loading, error, lastUpdated };
 }

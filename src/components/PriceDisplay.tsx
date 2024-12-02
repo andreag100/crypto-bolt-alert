@@ -1,70 +1,83 @@
 import React from 'react';
-import { TrendingUp } from 'lucide-react';
-import { CryptoPrice } from '../types';
+import { useCryptoPrices } from '../hooks/useCryptoPrices';
 
-interface PriceDisplayProps {
-  prices: CryptoPrice[];
-  loading: boolean;
-}
+const SUPPORTED_CRYPTOS = [
+  'bitcoin', 'ethereum', 'binancecoin', 'solana', 'cardano', 'ripple', 
+  'polkadot', 'dogecoin', 'avalanche-2', 'matic-network'
+];
 
-export function PriceDisplay({ prices, loading }: PriceDisplayProps) {
+export function PriceDisplay() {
+  const { prices, loading, error, lastUpdated } = useCryptoPrices(SUPPORTED_CRYPTOS);
+
   if (loading) {
     return (
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <TrendingUp className="w-6 h-6 text-indigo-600" />
-          <h2 className="text-xl font-bold text-gray-800">Live Prices</h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="p-4 rounded-lg border border-gray-200 animate-pulse"
-            >
-              <div className="h-6 bg-gray-200 rounded w-20 mb-2"></div>
-              <div className="h-8 bg-gray-200 rounded w-32"></div>
-            </div>
+      <div className="p-4">
+        <div className="animate-pulse space-y-4">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-10 bg-gray-200 rounded"></div>
           ))}
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="bg-white rounded-xl shadow-lg p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <TrendingUp className="w-6 h-6 text-indigo-600" />
-        <h2 className="text-xl font-bold text-gray-800">Live Prices</h2>
+  if (error) {
+    return (
+      <div className="p-4 text-red-500">
+        <p>Error loading prices. Please try again later.</p>
+        {lastUpdated && (
+          <p className="text-sm text-gray-500">
+            Last successful update: {lastUpdated.toLocaleTimeString()}
+          </p>
+        )}
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {prices.map((crypto) => (
-          <div
-            key={crypto.symbol}
-            className="p-4 rounded-lg border border-gray-200 hover:border-indigo-500 transition-colors duration-200"
-          >
-            <div className="flex justify-between items-center">
-              <h3 className="font-semibold text-gray-900">{crypto.symbol}</h3>
-              <span
-                className={`text-sm px-2 py-1 rounded ${
-                  crypto.change24h >= 0
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800'
-                }`}
-              >
-                {crypto.change24h >= 0 ? '+' : ''}
-                {crypto.change24h.toFixed(2)}%
-              </span>
+    );
+  }
+
+  if (!prices) {
+    return (
+      <div className="p-4 text-gray-500">
+        <p>No price data available</p>
+      </div>
+    );
+  }
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(price);
+  };
+
+  return (
+    <div className="p-4">
+      <div className="space-y-4">
+        {SUPPORTED_CRYPTOS.map((coin) => (
+          prices[coin] && (
+            <div key={coin} className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+              <div className="flex items-center space-x-3">
+                <img
+                  src={`https://assets.coingecko.com/coins/images/1/thumb/${coin}.png`}
+                  alt={coin}
+                  className="w-8 h-8 rounded-full"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://via.placeholder.com/32';
+                  }}
+                />
+                <span className="font-medium">{coin.charAt(0).toUpperCase() + coin.slice(1)}</span>
+              </div>
+              <span className="text-lg font-semibold">{formatPrice(prices[coin].usd)}</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900 mt-2">
-              ${crypto.price.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
-            </p>
-          </div>
+          )
         ))}
       </div>
+      {lastUpdated && (
+        <div className="mt-4 text-sm text-gray-500 text-right">
+          Last updated: {lastUpdated.toLocaleTimeString()}
+        </div>
+      )}
     </div>
   );
 }
