@@ -3,6 +3,7 @@ import { CryptoPrice } from '../types';
 const COINGECKO_API = 'https://api.coingecko.com/api/v3';
 const API_KEY = 'CG-fsBrSSGAc9VVMg32LHj6XbuE';
 
+
 export async function fetchCryptoPrices(symbols: string[]): Promise<CryptoPrice[]> {
   try {
     const ids = symbols.map(symbol => getCoinGeckoId(symbol.toLowerCase()));
