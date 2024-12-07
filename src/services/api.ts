@@ -1,7 +1,7 @@
 import { CryptoPrice } from '../types';
 
 const COINGECKO_API = 'https://api.coingecko.com/api/v3';
-const API_KEY = 'CG-X34cBHfDq1ZrPEKUa1R4MVSM';
+const API_KEY = 'CG-fsBrSSGAc9VVMg32LHj6XbuE';
 
 export async function fetchCryptoPrices(symbols: string[]): Promise<CryptoPrice[]> {
   try {
@@ -15,17 +15,17 @@ export async function fetchCryptoPrices(symbols: string[]): Promise<CryptoPrice[
         },
       }
     );
-    
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
-    
+
     return symbols.map((symbol) => {
       const id = getCoinGeckoId(symbol.toLowerCase());
       const priceData = data[id];
-      
+
       return {
         symbol,
         price: priceData?.usd || 0,
